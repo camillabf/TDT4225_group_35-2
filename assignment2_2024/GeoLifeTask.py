@@ -1,6 +1,5 @@
 from DbConnector import DbConnector
 from tabulate import tabulate
-import dataset
 import os
 
 class GeolifeTask:
@@ -129,11 +128,28 @@ def main():
     program = None
     try:
         program = GeolifeTask()
-        program.create_table()  # Removed the incorrect table_name parameter
-        # Add your user processing logic here
-        # Example: program.process_user_data("path_to_dataset")
+        
+        # Step 1: Create the required tables (User, Activity, TrackPoint)
+        program.create_table()  
 
-        # Fetch and show tables after inserting data
+        # Step 2: Process and insert data
+        # Provide the correct dataset path here.
+        dataset_path = "dataset/Data"  # Update this to your actual path based on your system
+        
+        # This will process all the user data and insert it into the database.
+        program.process_user_data(dataset_path)
+
+        # Step 3: Fetch and show the inserted data from the tables (optional for debugging)
+        print("Data from User table:")
+        program.fetch_data("User")
+        
+        print("Data from Activity table:")
+        program.fetch_data("Activity")
+        
+        print("Data from TrackPoint table:")
+        program.fetch_data("TrackPoint")
+        
+        # Show the current state of the tables
         program.show_tables()
         
     except Exception as e:
@@ -141,7 +157,6 @@ def main():
     finally:
         if program:
             program.connection.close_connection()
-
 
 if __name__ == '__main__':
     main()
