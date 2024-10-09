@@ -151,8 +151,8 @@ class GeolifeTask:
         VALUES (%s, %s, %s, %s)
         """
         self.cursor.execute(query, (user_id, transport_mode, start_datetime, end_datetime))
-        return self.cursor.lastrowid  # Return the generated activity ID
         self.db_connection.commit()
+        return self.cursor.lastrowid  
 
     # Batch insert trackpoints into TrackPoint table
     def insert_trackpoints_batch(self, trackpoints):
