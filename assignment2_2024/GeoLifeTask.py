@@ -12,7 +12,7 @@ class GeolifeTask:
     def load_labels_for_user(self, label_file_path):
         labels = []
         with open(label_file_path, 'r') as f:
-            next(f)  
+            next(f)  # Skip header line
             for line in f:
                 start_time, end_time, transport_mode = line.strip().split('\t')
                 labels.append({
@@ -22,31 +22,42 @@ class GeolifeTask:
                 })
         return labels
 
-
-
-            
-    def process_user_data(self, dataset_path, labels_path):
-        labeled_users = self.load_labels_for_user(labels_path)
+    def process_user_data(self, dataset_path):
+        # Loop through each user folder
         for root, dirs, files in os.walk(dataset_path):
-            user_id = os.path.basename(root)  
+            user_id = os.path.basename(root)
             
-            if user_id.isdigit():  
-                has_label = user_id in labeled_users
+            # Only proceed if the current folder looks like a valid user directory (e.g., folder names '000', '001', etc.)
+            if user_id.isdigit():
+                print(f"Processing user_id: {user_id}")
+
+                # Check if the user already exists in the User table
                 self.cursor.execute("SELECT id FROM User WHERE id = %s", (user_id,))
                 result = self.cursor.fetchone()
-               
+
+                # If the user is not already in the database, insert them
                 if result is None:
+                    # Check if labels.txt exists for this user
+                    label_file_path = os.path.join(root, 'labels.txt')
+                    has_label = os.path.exists(label_file_path)
+                    
+                    # Insert the user into the database
                     self.insert_user(user_id, has_label)
-                
-                label_file_path = os.path.join(root, 'labels.txt')  
-                labels = self.load_labels_for_user(label_file_path) if os.path.exists(label_file_path) else []
 
+                    # Load transportation mode labels if they exist
+                    labels = self.load_labels_for_user(label_file_path) if has_label else []
+                    if has_label:
+                        print(f"Loaded {len(labels)} labels for user {user_id}")
 
-                for file in files:  
-                    if file.endswith(".plt"):  
-                        file_path = os.path.join(root, file)
-                        self.process_plt_file(file_path, user_id,  labels) 
-                        
+                    # Process each .plt file in the user's Trajectory folder
+                    for file in files:
+                        if file.endswith(".plt"):
+                            file_path = os.path.join(root, file)
+                            print(f"Processing file: {file_path}")
+                            
+                            # Process .plt file and insert data into Activity and TrackPoint tables
+                            self.process_plt_file(file_path, user_id, labels)
+
     def process_plt_file(self, file_path, user_id, labels):
         trackpoints = []
         with open(file_path, 'r') as f:
@@ -67,7 +78,7 @@ class GeolifeTask:
             if activity_id:
                 print(f"Inserted activity with id: {activity_id}")
 
-            
+            # Collect all trackpoints for batch insert
             for line in lines:
                 data = line.strip().split(',')
                 latitude = float(data[0])
@@ -77,8 +88,7 @@ class GeolifeTask:
                 time = data[6]
                 date_time = f"{date} {time}"
 
-                # Collect trackpoints for batch insert later
-            trackpoints.append((activity_id, latitude, longitude, altitude, date_time))
+                trackpoints.append((activity_id, latitude, longitude, altitude, date_time))
         
         # Perform batch insert
         self.insert_trackpoints_batch(trackpoints)
@@ -88,7 +98,6 @@ class GeolifeTask:
             if label['start_time'] == start_datetime and label['end_time'] == end_datetime:
                 return label['transport_mode']
         return None  # No match
-
 
     def create_table(self):
         # User table
@@ -135,7 +144,6 @@ class GeolifeTask:
         print(f"Inserted user {user_id} with label {has_label}")
         self.db_connection.commit()
 
-
     # Insert activity data into the Activity table
     def insert_activity(self, user_id, transport_mode, start_datetime, end_datetime):
         query = """
@@ -144,6 +152,7 @@ class GeolifeTask:
         """
         self.cursor.execute(query, (user_id, transport_mode, start_datetime, end_datetime))
         return self.cursor.lastrowid  # Return the generated activity ID
+        self.db_connection.commit()
 
     # Batch insert trackpoints into TrackPoint table
     def insert_trackpoints_batch(self, trackpoints):
@@ -152,6 +161,7 @@ class GeolifeTask:
         VALUES (%s, %s, %s, %s, %s)
         """
         self.cursor.executemany(query, trackpoints)
+        self.db_connection.commit()
 
     def fetch_data(self, table_name):
         query = "SELECT * FROM %s" % table_name
@@ -184,12 +194,10 @@ def main():
         program.create_table()  
 
         # Step 2: Process and insert data
-        # Provide the correct dataset path here.
         dataset_path = "dataset/Data"  # Update this to your actual path based on your system
-        labels_path = "dataset/labeled_ids.txt" 
         
-        # This will process all the user data and insert it into the database.
-        program.process_user_data(dataset_path, labels_path)
+        # Process all user data and insert into the database.
+        program.process_user_data(dataset_path)
 
         # Step 3: Fetch and show the inserted data from the tables (optional for debugging)
         print("Data from User table:")
