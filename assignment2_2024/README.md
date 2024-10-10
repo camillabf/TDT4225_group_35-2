@@ -6,9 +6,9 @@ In this assignment we are working with the Geolife GPS Trajectory dataset from M
 **How to run the code**
 - Download the Geolife GPS Trajectory from Microsoft. (We are using a special version of this provided by NTNU, the original dataset may give errors due to differences in datastructure etc)
 - Update the values in the DBConnector.py file to connect to your own database.
-- pip install python 
-- pip install -r requirements.txt
-- run the GeoLifeTask.py script
+- Run in terminal: pip install python 
+- Run in terminal: pip install -r requirements.txt
+- Run in terminal: python3 GeoLifeTask.py to run the script. 
 
 
 
