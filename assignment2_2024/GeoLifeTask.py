@@ -149,7 +149,7 @@ class GeolifeDataProcessor:
                         plt_file_path = os.path.join(trajectory_folder, plt_file)
                         self.process_plt_file(plt_file_path, user_id, labels)
     
-    def display_top20_rows(self):
+    def display_top10_rows(self):
         tables = ['User', 'Activity', 'TrackPoint']
         for table in tables:
             query = f"SELECT * FROM {table} LIMIT 20;"
