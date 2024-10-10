@@ -1,6 +1,5 @@
 import mysql.connector as mysql
 
-
 class DbConnector:
     """
     Connects to the MySQL server on the Ubuntu virtual machine.
@@ -16,8 +15,8 @@ class DbConnector:
 
     def __init__(self,
                  HOST="tdt4225-35.idi.ntnu.no",
-                 DATABASE="group_35_db",
-                 USER="alvaha",
+                 DATABASE="testdb",
+                 USER="camilbf",
                  PASSWORD="test123"):
         # Connect to the database
         try:

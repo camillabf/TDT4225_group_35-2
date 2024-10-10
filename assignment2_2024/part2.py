@@ -1,6 +1,5 @@
-import haversine
-from DbConnector import DbConnector
 import math
+from DbConnector import DbConnector
 
 class GeolifeAnalysisTask:
     def __init__(self):
@@ -79,7 +78,10 @@ class GeolifeAnalysisTask:
         LIMIT 1
         """)
         result = self.cursor.fetchone()
-        print(f"Year with the most activities: {result[0]} ({result[1]} activities)")
+        if result:
+            print(f"Year with the most activities: {result[0]} ({result[1]} activities)")
+        else:
+            print("No activities found.")
         return result
 
     def year_with_most_recorded_hours(self):
@@ -91,16 +93,18 @@ class GeolifeAnalysisTask:
         LIMIT 1
         """)
         result = self.cursor.fetchone()
-        print(f"Year with the most recorded hours: {result[0]} ({result[1]} hours)")
+        if result:
+            print(f"Year with the most recorded hours: {result[0]} ({result[1]} hours)")
+        else:
+            print("No activities found.")
         return result
 
-    import math
-
-    def haversine(lat1, lon1, lat2, lon2):
-        R = 6371  # Earth radius in kilometers
+    def haversine(self, lat1, lon1, lat2, lon2):
+        # Earth radius in kilometers
+        R = 6371  
         d_lat = math.radians(lat2 - lat1)
         d_lon = math.radians(lon2 - lon1)
-        a = math.sin(d_lat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(d_lon/2)**2
+        a = math.sin(d_lat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(d_lon / 2) ** 2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
         return R * c  # Distance in kilometers
 
@@ -118,20 +122,20 @@ class GeolifeAnalysisTask:
         for i in range(1, len(trackpoints)):
             lat1, lon1 = trackpoints[i - 1]
             lat2, lon2 = trackpoints[i]
-            total_distance += haversine(lat1, lon1, lat2, lon2)
+            total_distance += self.haversine(lat1, lon1, lat2, lon2)  # Use self.haversine here
         
         print(f"Total distance walked by user {user_id} in 2008: {total_distance:.2f} km")
         return total_distance
     
     def top_20_altitude_gains(self):
         self.cursor.execute("""
-        SELECT T1.user_id, SUM(GREATEST(0, T1.altitude - T2.altitude)) AS total_gain
+        SELECT A.user_id, SUM(GREATEST(0, T1.altitude - T2.altitude)) AS total_gain
         FROM TrackPoint T1
         JOIN TrackPoint T2 ON T1.id = T2.id + 1
-        JOIN Activity A ON T1.activity_id = A.id
+        JOIN Activity A ON T1.activity_id = A.id  -- Join with Activity to get the user_id
         WHERE T1.altitude > -777  -- Exclude invalid altitude
         AND T2.altitude > -777  -- Exclude invalid altitude
-        GROUP BY T1.user_id
+        GROUP BY A.user_id
         ORDER BY total_gain DESC
         LIMIT 20;
         """)
@@ -160,10 +164,10 @@ class GeolifeAnalysisTask:
     
     def find_users_in_forbidden_city(self):
         self.cursor.execute("""
-        SELECT DISTINCT A.user_id
+       SELECT DISTINCT A.user_id
         FROM TrackPoint T
         JOIN Activity A ON T.activity_id = A.id
-        WHERE ABS(T.latitude - 39.916) < 0.001 AND ABS(T.longitude - 116.397) < 0.001;
+        WHERE ABS(T.latitude - 39.916) < 0.005 AND ABS(T.longitude - 116.397) < 0.005;
         """)
         
         result = self.cursor.fetchall()
