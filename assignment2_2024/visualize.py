@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-user_id = '125'  # Change to the desired user ID
+user_id = '128'  # Change to the desired user ID
 user_data_path = f"dataset/Data/{user_id}/Trajectory"
 
 def load_plt_data(path):
